@@ -40,7 +40,7 @@ jobs:
             git add estado.json && git commit -m "Estado: $(python -c 'import json;print(json.load(open("estado.json"))["servidor"]["estado"])')" && git push
           fi
       - name: Armar el sitio
-        run: cp index.html sitio/ && touch sitio/.nojekyll
+        run: cp index.html logo.svg sitio/ && touch sitio/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: sitio
