@@ -1,24 +1,30 @@
 {
   "servidor": {
-    "estado": "caido",
-    "caido_desde": "2026-11-07T01:11-03:00"
+    "estado": "operativo",
+    "nombre": "Azure"
   },
   "servicios": [
     {
       "nombre": "Prisma",
       "descripcion": "Asistente personal",
-      "estado": "caido"
+      "estado": "operativo"
     },
     {
       "nombre": "Botzy",
       "descripcion": "Bot de música",
-      "estado": "caido"
+      "estado": "operativo",
+      "porcentaje_7d": 100.0
     },
     {
       "nombre": "CeratiBot",
       "descripcion": "Homenaje a Gustavo Cerati",
       "estado": "caido"
+    },
+    {
+      "nombre": "Minecraft",
+      "descripcion": "Servidor de Minecraft",
+      "estado": "caido"
     }
   ],
-  "cambio": "2026-11-07T01:11-03:00"
+  "cambio": "2026-11-07T13:25-03:00"
 }
