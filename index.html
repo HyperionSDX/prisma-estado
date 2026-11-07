@@ -87,6 +87,11 @@
       resumen.className = "resumen ok";
       resumen.textContent = "Todo funciona con normalidad";
     }
+    if (d.servidor && d.servidor.estado !== "caido" && d.servidor.nombre) {
+      const donde = document.createElement("small");
+      donde.textContent = `Servidor: ${d.servidor.nombre}`;
+      resumen.append(donde);
+    }
     document.getElementById("pie").textContent = `Actualizado ${hace(d.actualizado)} · se revisa cada 10 minutos.`;
   }
   fetch("estado.json", { cache: "no-store" }).then(r => r.json()).then(pintar).catch(() => {
