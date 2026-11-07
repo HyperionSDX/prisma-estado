@@ -51,7 +51,7 @@
   </header>
   <div id="resumen" class="resumen cargando">Consultando…</div>
   <ul id="lista" aria-live="polite"></ul>
-  <footer id="pie">Se revisa cada 10 minutos.</footer>
+  <footer id="pie">Consultando a Prisma…</footer>
 </main>
 <script>
   const ETIQUETA = { operativo: "En línea", caido: "Fuera de servicio", pausado: "En pausa", sin_datos: "Sin datos", apagado: "Apagado" };
@@ -92,12 +92,42 @@
       donde.textContent = `Servidor: ${d.servidor.nombre}`;
       resumen.append(donde);
     }
-    document.getElementById("pie").textContent = `Actualizado ${hace(d.actualizado)} · se revisa cada 10 minutos.`;
+    document.getElementById("pie").textContent = d.vivo
+      ? "En vivo: datos directos de Prisma · se actualiza cada minuto."
+      : `Prisma no responde en este momento · última revisión ${hace(d.actualizado)}.`;
   }
-  fetch("estado.json", { cache: "no-store" }).then(r => r.json()).then(pintar).catch(() => {
-    const r = document.getElementById("resumen");
-    r.className = "resumen medio"; r.textContent = "No pude cargar el estado. Intenta de nuevo en unos minutos.";
-  });
+
+  // En vivo: se le pregunta directo a Prisma (a sus dos casas posibles; gana la primera que responde).
+  // Si ninguna responde, se usa la última revisión guardada por GitHub (estado.json de esta página).
+  const VIVO = [["Oracle", "https://prisma.tail53ad1c.ts.net/estado.json"],
+                ["Azure", "https://prisma-azure.tail87f042.ts.net/estado.json"]];
+  const pedir = (url, ms) => fetch(url, { cache: "no-store", signal: AbortSignal.timeout(ms) })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)));
+
+  async function actualizar() {
+    try {
+      const d = await Promise.any(VIVO.map(([nombre, url]) => pedir(url, 8000).then(x => {
+        if (!x.servicios || !x.servicios.length) throw new Error("vacío");
+        return { ...x, vivo: true, servidor: { estado: "operativo", nombre } };
+      })));
+      pintar(d);
+    } catch {
+      try {
+        const d = await pedir("estado.json", 15000);
+        if (!d.servidor || d.servidor.estado !== "caido") {
+          // GitHub alcanzó a verla en línea, pero ahora no responde: se avisa sin inventar desde cuándo.
+          d.servidor = { estado: "sin_conexion" };
+          d.servicios = d.servicios.map(s => s.nombre === "Prisma" ? { ...s, estado: "caido" } : s);
+        }
+        pintar(d);
+      } catch {
+        const r = document.getElementById("resumen");
+        r.className = "resumen medio"; r.textContent = "No pude cargar el estado. Intenta de nuevo en unos minutos.";
+      }
+    }
+  }
+  actualizar();
+  setInterval(actualizar, 60000);
 </script>
 </body>
 </html>
