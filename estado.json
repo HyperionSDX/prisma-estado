@@ -1,0 +1,24 @@
+{
+  "servidor": {
+    "estado": "caido",
+    "caido_desde": "2026-11-07T01:11-03:00"
+  },
+  "servicios": [
+    {
+      "nombre": "Prisma",
+      "descripcion": "Asistente personal",
+      "estado": "caido"
+    },
+    {
+      "nombre": "Botzy",
+      "descripcion": "Bot de música",
+      "estado": "caido"
+    },
+    {
+      "nombre": "CeratiBot",
+      "descripcion": "Homenaje a Gustavo Cerati",
+      "estado": "caido"
+    }
+  ],
+  "cambio": "2026-11-07T01:11-03:00"
+}
