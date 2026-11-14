@@ -5,190 +5,305 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Estado de Prisma</title>
 <meta name="description" content="Estado en vivo de Prisma y sus servicios.">
-<meta name="theme-color" content="#05060d">
+<meta name="theme-color" content="#05060b">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Diseño «Espectro»: el mismo prisma del panel de Prisma, con un rayo por servicio. -->
 <style>
-  :root {
-    --fondo: #05060d; --panel: rgba(14, 18, 36, .62); --borde: rgba(120, 140, 255, .16); --borde-fuerte: rgba(120, 160, 255, .35);
-    --texto: #e8ecff; --suave: #8b93b8; --tenue: #4b5274;
-    --cian: #00e5ff; --violeta: #b06bff; --rosa: #ff4fd8;
-    --ok: #2bffa6; --mal: #ff4d6d; --medio: #ffc24b; --gris: #6b7394;
-    --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
-    --sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  * { box-sizing: border-box; }
-  html { background: var(--fondo); }
-  body {
-    margin: 0; min-height: 100vh; color: var(--texto); font: 16px/1.5 var(--sans); background: var(--fondo);
-    overflow-x: hidden;
-  }
-  /* Fondo: cuadrícula en perspectiva + resplandores */
-  .cielo { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-  .cielo::before {
-    content: ""; position: absolute; inset: -50% -50% 0; transform: perspective(600px) rotateX(62deg) translateY(30%);
-    background-image: linear-gradient(rgba(0, 229, 255, .09) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(176, 107, 255, .09) 1px, transparent 1px);
-    background-size: 56px 56px; mask-image: linear-gradient(to top, #000 10%, transparent 70%);
-    animation: avanzar 6s linear infinite;
-  }
-  .cielo::after {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(600px 380px at 15% 0%, rgba(0, 229, 255, .16), transparent 70%),
-                radial-gradient(700px 420px at 90% 10%, rgba(176, 107, 255, .18), transparent 70%),
-                radial-gradient(500px 300px at 50% 110%, rgba(255, 79, 216, .10), transparent 70%);
-  }
-  @keyframes avanzar { to { background-position: 0 56px, 0 0; } }
+    @property --h { syntax: "<number>"; inherits: true; initial-value: 200; }
+    :root {
+      --h: 200; --tono: oklch(.85 .115 var(--h)); --noche: #05060b;
+      --linea: rgba(255, 255, 255, .075); --linea-2: rgba(255, 255, 255, .15);
+      --texto: #eef0f6; --tenue: #a3a9bb; --muy-tenue: #6b7186; --verde: #4ade80; --ambar: #fbbf24; --rojo: #f87171;
+      --espectro: linear-gradient(90deg, oklch(.82 .13 200), oklch(.84 .14 150), oklch(.88 .14 100), oklch(.82 .14 55),
+        oklch(.76 .16 10), oklch(.74 .17 330), oklch(.74 .16 290), oklch(.78 .13 250));
+      --fuente: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+      --titulos: "Sora", "Figtree", "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--noche); }
+    body { margin: 0; min-height: 100vh; background: var(--noche); color: var(--texto); font: 15px/1.55 var(--fuente);
+      -webkit-font-smoothing: antialiased; overflow-x: hidden; transition: --h 1.1s ease; }
+    body.mal { --h: 20; }
+    .ambiente { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(1000px 560px at 88% -12%, oklch(.6 .2 var(--h) / .24), transparent 70%),
+                  radial-gradient(760px 520px at -8% 108%, oklch(.58 .19 calc(var(--h) + 75) / .14), transparent 70%); }
+    main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 36px 16px 56px; }
 
-  main { max-width: 880px; margin: 0 auto; padding: 36px 16px 48px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
+    .marca { display: flex; align-items: center; gap: 13px; }
+    .marca img { width: 46px; height: 46px; border-radius: 13px; }
+    h1 { margin: 0; font: 600 17px var(--titulos); letter-spacing: .3em; }
+    .sub { margin: 3px 0 0; color: var(--muy-tenue); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; }
+    .vivo { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 13px; border-radius: 12px; font-size: 12.5px;
+      color: var(--tenue); border: 1px solid var(--linea); background: rgba(255, 255, 255, .025); }
+    .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muy-tenue); flex: none; }
+    .punto.ok { background: var(--verde); box-shadow: 0 0 10px var(--verde); }
+    .punto.error { background: var(--rojo); box-shadow: 0 0 10px var(--rojo); }
+    .punto.espera { background: #a78bfa; }
+    .vivo.on .punto { background: var(--verde); box-shadow: 0 0 10px var(--verde); animation: latido 1.8s ease-in-out infinite; }
+    @keyframes latido { 50% { opacity: .35; } }
 
-  /* Encabezado */
-  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
-  .marca { display: flex; align-items: center; gap: 14px; }
-  .prisma { width: 52px; height: 52px; border-radius: 16px; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 0 28px -6px rgba(165,243,252,.6); }
-  h1 { margin: 0; font: 700 1.55rem/1 var(--sans); letter-spacing: .32em; text-transform: uppercase;
-       background: linear-gradient(90deg, var(--cian), var(--violeta) 60%, var(--rosa)); -webkit-background-clip: text;
-       background-clip: text; color: transparent; }
-  .sub { margin: 6px 0 0; font: 400 .72rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--suave); }
-  .vivo { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--borde);
-          border-radius: 999px; background: var(--panel); font: 600 .7rem/1 var(--mono); letter-spacing: .18em;
-          text-transform: uppercase; color: var(--suave); backdrop-filter: blur(10px); }
-  .vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--gris); }
-  .vivo.on { color: var(--ok); border-color: rgba(43, 255, 166, .35); }
-  .vivo.on i { background: var(--ok); box-shadow: 0 0 10px var(--ok); animation: latido 1.6s ease-in-out infinite; }
-  @keyframes latido { 50% { opacity: .3; } }
+    /* La tarjeta con el prisma: un rayo por servicio */
+    .hero { position: relative; overflow: hidden; padding: 30px 26px 26px 32px; border-radius: 28px; border: 1px solid var(--linea);
+      background: radial-gradient(520px 300px at 20% 70%, oklch(.6 .2 var(--h) / .16), transparent 70%), rgba(13, 15, 24, .82); }
+    .hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--espectro); opacity: .9; }
+    .escena { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .cabeza, .cuerpo { position: relative; z-index: 1; }
+    .sobre { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--tono); }
+    .sobre::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: var(--tono); box-shadow: 0 0 10px var(--tono); }
+    .titular { margin: 10px 0 8px; font: 600 clamp(26px, 5vw, 38px)/1.1 var(--titulos); letter-spacing: -.035em; text-wrap: balance; }
+    .hero.mal .titular { color: var(--rojo); }
+    .hero.medio .titular { color: var(--ambar); }
+    .detalle { margin: 0 0 16px; color: var(--tenue); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px; border-radius: 999px; white-space: nowrap;
+      border: 1px solid var(--linea); background: rgba(255, 255, 255, .04); color: var(--tenue); font-size: 12.5px; }
+    .chip b { color: var(--texto); font-weight: 600; }
+    .cuerpo { display: grid; grid-template-columns: clamp(150px, 30%, 240px) minmax(0, 1fr); margin-top: 24px; }
+    .zona { min-height: 150px; }
+    .servicios { display: grid; gap: 4px; align-content: center; }
+    .srv { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px 8px 8px; min-height: 54px;
+      border-radius: 14px; border: 1px solid transparent; }
+    .srv-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: var(--c);
+      background: color-mix(in oklab, var(--c) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 30%, transparent); }
+    .srv-ic svg { width: 18px; height: 18px; }
+    .srv-tx { display: grid; min-width: 0; }
+    .srv-tx b { font: 600 15px var(--titulos); letter-spacing: -.01em; }
+    .srv-tx small { color: var(--tenue); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srv-estado { display: grid; justify-items: end; font-size: 12.5px; color: var(--tenue); white-space: nowrap; }
+    .srv-estado span { display: inline-flex; align-items: center; gap: 7px; }
+    .srv-estado small { color: var(--muy-tenue); font-size: 11.5px; }
+    .srv.caido { background: rgba(248, 113, 113, .07); border-color: rgba(248, 113, 113, .3); }
+    .srv.caido .srv-estado span { color: var(--rojo); }
+    .srv.quieto .srv-ic { filter: saturate(.3); opacity: .7; }
 
-  /* Tarjeta principal */
-  .hero {
-    position: relative; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center;
-    padding: 26px; border-radius: 22px; border: 1px solid var(--borde); background: var(--panel);
-    backdrop-filter: blur(14px); overflow: hidden; --c: var(--gris);
-  }
-  .hero::before { /* borde de neón */
-    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: linear-gradient(120deg, var(--c), transparent 40%, transparent 60%, var(--violeta));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude; opacity: .8;
-  }
-  .hero::after { /* barrido de escáner */
-    content: ""; position: absolute; left: 0; right: 0; top: -40%; height: 40%; pointer-events: none;
-    background: linear-gradient(to bottom, transparent, rgba(0, 229, 255, .06), transparent);
-    animation: escanear 5s linear infinite;
-  }
-  @keyframes escanear { to { top: 110%; } }
-  .hero.ok { --c: var(--ok); } .hero.mal { --c: var(--mal); } .hero.medio { --c: var(--medio); }
-  .orbe { position: relative; width: 112px; height: 112px; }
-  .orbe svg { width: 100%; height: 100%; }
-  .orbe .aro { fill: none; stroke: var(--c); stroke-width: 2; opacity: .9; filter: drop-shadow(0 0 6px var(--c)); }
-  .orbe .aro2 { fill: none; stroke: var(--c); stroke-width: 1; stroke-dasharray: 4 9; opacity: .5;
-                transform-origin: 60px 60px; animation: girar 14s linear infinite; }
-  .orbe .nucleo { fill: var(--c); opacity: .9; filter: drop-shadow(0 0 16px var(--c)); transform-origin: 60px 60px;
-                  animation: pulso 2.4s ease-in-out infinite; }
-  @keyframes girar { to { transform: rotate(360deg); } }
-  @keyframes pulso { 50% { transform: scale(.82); opacity: .55; } }
-  .titular { margin: 0 0 6px; font: 700 clamp(1.3rem, 4vw, 1.9rem)/1.15 var(--sans); }
-  .detalle { margin: 0 0 16px; color: var(--suave); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { display: inline-flex; gap: 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--borde);
-          background: rgba(5, 8, 20, .55); font: 400 .74rem/1.2 var(--mono); color: var(--suave); }
-  .chip b { color: var(--texto); font-weight: 600; }
+    .rayo { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+    .rayo-brillo { fill: none; stroke-width: 7; stroke-linecap: round; opacity: .2; filter: blur(4px); }
+    .rayo.quieto { opacity: .22; stroke-dasharray: 2 7; }
+    .rayo.caido { stroke: var(--rojo); stroke-dasharray: 3 7; animation: latido 1.6s ease-in-out infinite; }
+    .haz { stroke-width: 2.5; stroke-linecap: round; }
+    .haz-brillo { stroke-width: 12; stroke-linecap: round; opacity: .16; filter: blur(7px); }
+    .cristal { fill: rgba(255, 255, 255, .05); stroke: rgba(255, 255, 255, .8); stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 0 16px oklch(.85 .115 var(--h) / .7)); }
+    .cristal-fondo { fill: rgba(255, 255, 255, .025); stroke: rgba(255, 255, 255, .32); stroke-width: 1; stroke-linejoin: round; }
+    .cristal-arista { fill: none; stroke: rgba(255, 255, 255, .32); stroke-width: 1; }
+    .cristal-reflejo { stroke: rgba(255, 255, 255, .5); stroke-width: 1.5; stroke-linecap: round; }
+    .luz-prisma { mix-blend-mode: screen; opacity: .75; animation: respirar 4.6s ease-in-out infinite; }
+    @keyframes respirar { 50% { opacity: .4; } }
+    .hero.mal .luz-prisma, .hero.medio .luz-prisma { animation-duration: 1.4s; }
+    .destino { fill: var(--c); filter: drop-shadow(0 0 6px var(--c)); }
+    .viajero { fill: #fff; filter: drop-shadow(0 0 5px var(--c)) drop-shadow(0 0 12px var(--c)); }
 
-  /* Servicios */
-  .titulo-seccion { margin: 34px 0 14px; font: 600 .72rem/1 var(--mono); letter-spacing: .26em; text-transform: uppercase;
-                    color: var(--suave); display: flex; align-items: center; gap: 12px; }
-  .titulo-seccion::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--borde-fuerte), transparent); }
-  .grilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; list-style: none; margin: 0; padding: 0; }
-  .servicio {
-    position: relative; padding: 18px; border-radius: 16px; border: 1px solid var(--borde); background: var(--panel);
-    backdrop-filter: blur(12px); transition: transform .25s, border-color .25s, box-shadow .25s; --c: var(--gris);
-  }
-  .servicio:hover { transform: translateY(-3px); border-color: var(--borde-fuerte); box-shadow: 0 10px 30px -12px var(--c); }
-  .servicio::before { content: ""; position: absolute; left: 18px; right: 18px; top: 0; height: 2px; border-radius: 2px;
-                      background: linear-gradient(90deg, transparent, var(--c), transparent); opacity: .9; }
-  .servicio.operativo { --c: var(--ok); } .servicio.caido { --c: var(--mal); } .servicio.pausado { --c: var(--medio); }
-  .fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .nombre { font: 700 1.08rem/1.2 var(--sans); }
-  .estado { display: inline-flex; align-items: center; gap: 7px; font: 600 .68rem/1 var(--mono); letter-spacing: .14em;
-            text-transform: uppercase; color: var(--c); white-space: nowrap; }
-  .estado i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
-  .operativo .estado i { animation: latido 2s ease-in-out infinite; }
-  .desc { margin: 8px 0 0; color: var(--suave); font-size: .9rem; min-height: 1.4em; }
-  .medidor { margin-top: 14px; font: 400 .7rem/1 var(--mono); color: var(--suave); }
-  .medidor .barra { height: 4px; margin-top: 7px; border-radius: 4px; background: rgba(120, 140, 255, .12); overflow: hidden; }
-  .medidor .barra span { display: block; height: 100%; border-radius: inherit;
-                         background: linear-gradient(90deg, var(--cian), var(--c)); box-shadow: 0 0 8px var(--c); }
+    footer { margin-top: 22px; color: var(--muy-tenue); font-size: 12.5px; }
+    .recarga { height: 2px; margin-bottom: 12px; border-radius: 2px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+    .recarga span { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--tono); animation: cuenta 60s linear forwards; }
+    @keyframes cuenta { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .pie { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    footer a { color: var(--tono); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
 
-  /* Pie */
-  footer { margin-top: 30px; font: 400 .74rem/1.6 var(--mono); color: var(--suave); }
-  .recarga { height: 2px; margin-bottom: 12px; border-radius: 2px; background: rgba(120, 140, 255, .1); overflow: hidden; }
-  .recarga span { display: block; height: 100%; width: 100%; transform-origin: left;
-                  background: linear-gradient(90deg, var(--cian), var(--violeta)); animation: cuenta 60s linear forwards; }
-  @keyframes cuenta { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-  .pie { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  footer a { color: var(--cian); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-
-  @media (max-width: 560px) {
-    .hero { grid-template-columns: 1fr; justify-items: start; padding: 22px; }
-    .orbe { width: 88px; height: 88px; }
-    h1 { letter-spacing: .24em; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-  }
+    @media (max-width: 640px) {
+      .hero { padding: 26px 18px 20px 22px; }
+      .cuerpo { grid-template-columns: minmax(0, 1fr); margin-top: 8px; }
+      .zona { min-height: 0; height: 92px; }
+      .servicios { padding-left: 46px; }
+      .srv-estado small { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="cielo" aria-hidden="true"></div>
-<main>
-  <header>
-    <div class="marca">
-      <img class="prisma" src="logo.svg" alt="" width="52" height="52">
-      <div>
-        <h1>Prisma</h1>
-        <p class="sub">Estado del sistema</p>
+  <div class="ambiente" aria-hidden="true"></div>
+  <main>
+    <header>
+      <div class="marca">
+        <img src="logo.svg" alt="" width="46" height="46">
+        <div><h1>PRISMA</h1><p class="sub">Estado del sistema</p></div>
       </div>
-    </div>
-    <span id="senal" class="vivo"><i></i><span>Conectando</span></span>
-  </header>
+      <span id="senal" class="vivo"><i class="punto"></i><span>Conectando</span></span>
+    </header>
 
-  <section id="hero" class="hero" aria-live="polite">
-    <div class="orbe" aria-hidden="true">
-      <svg viewBox="0 0 120 120">
-        <circle class="aro" cx="60" cy="60" r="54"/>
-        <circle class="aro2" cx="60" cy="60" r="44"/>
-        <circle class="nucleo" cx="60" cy="60" r="18"/>
-      </svg>
-    </div>
-    <div>
-      <p id="titular" class="titular">Consultando…</p>
-      <p id="detalle" class="detalle">Estableciendo conexión con Prisma.</p>
-      <div class="chips">
-        <span class="chip">Servidor <b id="chip-servidor">—</b></span>
-        <span class="chip">Servicios <b id="chip-servicios">—</b></span>
-        <span class="chip">Última señal <b id="chip-senal">—</b></span>
+    <section id="hero" class="hero" aria-live="polite">
+      <svg class="escena" id="escena" aria-hidden="true"></svg>
+      <div class="cabeza">
+        <div class="sobre">En vivo</div>
+        <p id="titular" class="titular">Consultando…</p>
+        <p id="detalle" class="detalle">Un momento.</p>
+        <div class="chips" id="chips"></div>
       </div>
-    </div>
-  </section>
+      <div class="cuerpo">
+        <div class="zona" id="zona"></div>
+        <div class="servicios" id="lista"></div>
+      </div>
+    </section>
 
-  <h2 class="titulo-seccion">Servicios</h2>
-  <ul id="lista" class="grilla"></ul>
-
-  <footer>
-    <div class="recarga" aria-hidden="true"><span id="recarga"></span></div>
-    <div class="pie">
-      <span id="pie">Consultando a Prisma…</span>
-      <a href="https://hyperion.is-a.dev/">hyperion.is-a.dev</a>
-    </div>
-  </footer>
-</main>
+    <footer>
+      <div class="recarga" aria-hidden="true"><span id="recarga"></span></div>
+      <div class="pie"><span id="pie">Consultando a Prisma…</span><a href="https://hyperion.is-a.dev/">hyperion.is-a.dev</a></div>
+    </footer>
+  </main>
 <script>
-  const ETIQUETA = { operativo: "En línea", caido: "Fuera de servicio", pausado: "En pausa", sin_datos: "Sin datos", apagado: "Apagado" };
-  const $ = id => document.getElementById(id);
-  const fecha = iso => iso ? new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }) : "";
-  const hace = iso => {
+(() => {
+  "use strict";
+
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const id = (x) => document.getElementById(x);
+  const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ETIQUETA = { operativo: "En línea", caido: "Caído", pausado: "En pausa", sin_datos: "Sin datos", apagado: "Apagado" };
+  const COLORES = { Prisma: "#a78bfa", Botzy: "#fbbf24", CeratiBot: "#f472b6", Minecraft: "#34d399" }, RESERVA = ["#22d3ee", "#60a5fa", "#fb923c", "#4ade80"];
+  const ICONOS = {
+    Prisma: '<path d="M12 3 3 19h18z"/><path d="M12 9v6"/>',
+    Botzy: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    CeratiBot: '<path d="m14 10 6-6M18 3l3 3"/><path d="M11.5 9.5a3.5 3.5 0 0 0-5 .5L4.2 12.3a4 4 0 0 0 5.6 5.6L12 15.6a3.5 3.5 0 0 0 .5-5l-1-1z"/><circle cx="8.5" cy="14" r="1"/>',
+    Minecraft: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>',
+  };
+  const OTRO = '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>';
+
+  function lapso(iso) {
+    const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+  }
+
+  function htmlFila(s, i) {
+    const est = s.estado || "sin_datos", modo = est === "caido" ? "caido" : est === "operativo" ? "" : "quieto";
+    const punto = est === "operativo" ? "ok" : est === "caido" ? "error" : est === "pausado" ? "espera" : "";
+    const nota = s.desde && est === "operativo" ? `sin interrupciones hace ${lapso(s.desde)}`
+      : typeof s.porcentaje_7d === "number" ? `${s.porcentaje_7d.toLocaleString("es-CL", { maximumFractionDigits: 1 })} % en línea (7 días)` : "";
+    return `<div class="srv ${modo}" style="--c:${COLORES[s.nombre] || RESERVA[i % RESERVA.length]}">
+      <span class="srv-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONOS[s.nombre] || OTRO}</svg></span>
+      <span class="srv-tx"><b>${esc(s.nombre)}</b><small>${esc(s.descripcion || "")}</small></span>
+      <span class="srv-estado"><span><i class="punto ${punto}"></i>${esc(ETIQUETA[est] || est)}</span><small>${esc(nota)}</small></span></div>`;
+  }
+
+  /** Muestra un estado: clase de la tarjeta (ok / medio / mal), textos, chips y la lista de servicios. */
+  let listaAntes = "";
+  function mostrar(v) {
+    id("hero").className = `hero ${v.clase || ""}`;
+    document.body.classList.toggle("mal", v.clase === "mal");
+    id("titular").textContent = v.titular;
+    id("detalle").textContent = v.detalle;
+    id("chips").innerHTML = (v.chips || []).map(([nombre, valor, clave]) => `<span class="chip">${esc(nombre)} <b${clave ? ` id="${clave}"` : ""}>${esc(valor)}</b></span>`).join("");
+    const html = (v.servicios || []).map(htmlFila).join("");
+    if (html !== listaAntes) { listaAntes = html; id("lista").innerHTML = html; }
+    dibujar();
+  }
+
+  // ---- La escena: la luz blanca entra al prisma y sale un rayo por cada servicio, hasta su fila.
+  // En el celular los servicios van debajo: los rayos bajan juntos, como una cinta, y cada uno dobla hacia el suyo.
+  let escena = null, mira = [0.45, -0.4], encendido = null, cuadro = 0;
+  function dibujar() {
+    const hero = id("hero"), svg = id("escena"), filas = [...document.querySelectorAll("#lista .srv")];
+    if (!filas.length) { svg.innerHTML = ""; return; }
+    const H = hero.getBoundingClientRect(), Z = id("zona").getBoundingClientRect();
+    if (!H.width) return;
+    const n = filas.length, f = (x) => x.toFixed(1);
+    const z = { x: Z.left - H.left, y: Z.top - H.top, w: Z.width, h: Z.height };
+    const vertical = z.w > H.width * 0.6;
+    const destinos = filas.map((fila) => { const r = fila.getBoundingClientRect(); return [r.left - H.left - 3, r.top - H.top + r.height / 2]; });
+    let top, der, izq, entrada, haz, salidas, caminos;
+    if (vertical) {
+      const lado = 52, cx = 34, cy = z.y + z.h / 2 - 6;
+      top = [cx, cy - lado * 0.5]; der = [cx + lado / 2, cy + lado * 0.4]; izq = [cx - lado / 2, cy + lado * 0.4];
+      entrada = [cx + lado * 0.25, cy - lado * 0.05];
+      haz = [Math.min(H.width - 26, cx + 300), entrada[1] - 22];
+      salidas = destinos.map((_, i) => [cx + ((n - 1) / 2 - i) * 3.2, der[1]]);
+      caminos = destinos.map(([tx, ty], i) => `M${f(salidas[i][0])} ${f(salidas[i][1])}V${f(ty - 12)}Q${f(salidas[i][0])} ${f(ty)} ${f(salidas[i][0] + 12)} ${f(ty)}H${f(tx)}`);
+    } else {
+      const lado = Math.max(64, Math.min(z.w * 0.6, 136)), cx = z.x + z.w * 0.42, cy = z.y + z.h / 2;
+      top = [cx, cy - lado * 0.56]; der = [cx + lado / 2, cy + lado * 0.36]; izq = [cx - lado / 2, cy + lado * 0.36];
+      entrada = [(top[0] + izq[0]) / 2, (top[1] + izq[1]) / 2];
+      haz = [6, entrada[1] + lado * 0.3];
+      salidas = destinos.map((_, i) => { const t = n > 1 ? 0.3 + (0.42 * i) / (n - 1) : 0.5; return [top[0] + (der[0] - top[0]) * t, top[1] + (der[1] - top[1]) * t]; });
+      caminos = destinos.map(([tx, ty], i) => { const [sx, sy] = salidas[i], d = tx - sx; return `M${f(sx)} ${f(sy)}C${f(sx + d * 0.5)} ${f(sy)} ${f(tx - d * 0.5)} ${f(ty)} ${f(tx)} ${f(ty)}`; });
+    }
+    const lado = der[0] - izq[0], centro = [(top[0] + der[0] + izq[0]) / 3, (top[1] + der[1] + izq[1]) / 3];
+    escena = { top, der, izq, centro, lado };
+    const color = (fila) => getComputedStyle(fila).getPropertyValue("--c").trim() || "#a78bfa";
+    const modo = (fila) => fila.classList.contains("caido") ? "caido" : fila.classList.contains("quieto") ? "quieto" : "";
+    svg.setAttribute("viewBox", `0 0 ${f(H.width)} ${f(H.height)}`);
+    svg.innerHTML = `<defs>
+        <linearGradient id="g-haz" gradientUnits="userSpaceOnUse" x1="${f(haz[0])}" y1="${f(haz[1])}" x2="${f(entrada[0])}" y2="${f(entrada[1])}">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient>
+        <radialGradient id="g-luz"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        ${filas.map((fila, i) => `<linearGradient id="g-${i}" gradientUnits="userSpaceOnUse" x1="${f(salidas[i][0])}" y1="${f(salidas[i][1])}" x2="${f(destinos[i][0])}" y2="${f(destinos[i][1])}">
+          <stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${color(fila)}"/><stop offset="1" stop-color="${color(fila)}"/></linearGradient>`).join("")}</defs>
+      <path class="haz-brillo" stroke="url(#g-haz)" d="M${f(haz[0])} ${f(haz[1])}L${f(entrada[0])} ${f(entrada[1])}"/>
+      <path class="haz" stroke="url(#g-haz)" d="M${f(haz[0])} ${f(haz[1])}L${f(entrada[0])} ${f(entrada[1])}"/>
+      ${filas.map((fila, i) => modo(fila) ? "" : `<path class="rayo-brillo" stroke="${color(fila)}" d="${caminos[i]}"/>`).join("")}
+      ${filas.map((fila, i) => `<path class="rayo ${modo(fila)}" data-i="${i}" data-color="${color(fila)}" stroke="url(#g-${i})" d="${caminos[i]}"/>`).join("")}
+      <g id="viajeros"></g>
+      <g id="cristal">
+        <path class="cristal-fondo" id="fondo"/><path class="cristal-arista" id="aristas"/>
+        <path class="cristal" d="M${f(top[0])} ${f(top[1])}L${f(der[0])} ${f(der[1])}L${f(izq[0])} ${f(izq[1])}Z"/>
+        ${filas.map((fila, i) => `<path d="M${f(entrada[0])} ${f(entrada[1])}L${f(salidas[i][0])} ${f(salidas[i][1])}" stroke="${color(fila)}" stroke-width="1" opacity="${modo(fila) ? 0.12 : 0.4}"/>`).join("")}
+        <path class="cristal-reflejo" d="M${f(top[0] - (top[0] - izq[0]) * 0.18)} ${f(top[1] + (izq[1] - top[1]) * 0.3)}L${f(top[0] - (top[0] - izq[0]) * 0.62)} ${f(top[1] + (izq[1] - top[1]) * 0.86)}"/>
+        <circle class="luz-prisma" id="luz" r="${f(lado * 0.26)}" fill="url(#g-luz)"/>
+      </g>
+      <circle cx="${f(entrada[0])}" cy="${f(entrada[1])}" r="3.5" fill="#fff" opacity=".9"/>
+      ${filas.map((fila, i) => `<circle class="destino" r="3" cx="${f(destinos[i][0])}" cy="${f(destinos[i][1])}" style="--c:${modo(fila) === "caido" ? "var(--rojo)" : color(fila)}" opacity="${modo(fila) === "quieto" ? 0.35 : 1}"/>`).join("")}`;
+    inclinar();
+    encender(filas);
+  }
+
+  /** El prisma es un vidrio con fondo: según dónde está el puntero se ve su cara de atrás, y su luz se mueve. */
+  function inclinar() {
+    const e = escena, fondo = id("fondo");
+    if (!e || !fondo) return;
+    const [nx, ny] = mira, p = e.lado * 0.17, f = (x) => x.toFixed(1);
+    const frente = [e.top, e.der, e.izq], atras = frente.map(([x, y]) => [x - nx * p, y - ny * p]);
+    fondo.setAttribute("d", `M${atras.map(([x, y]) => `${f(x)} ${f(y)}`).join("L")}Z`);
+    id("aristas").setAttribute("d", frente.map(([x, y], i) => `M${f(x)} ${f(y)}L${f(atras[i][0])} ${f(atras[i][1])}`).join(""));
+    id("luz").setAttribute("cx", f(e.centro[0] + nx * e.lado * 0.11)); id("luz").setAttribute("cy", f(e.centro[1] + ny * e.lado * 0.09));
+  }
+
+  /** El encendido (una vez): entra el haz, aparece el prisma y los rayos salen de a uno hasta su servicio. */
+  function encender(filas) {
+    if (sinMovimiento()) return;
+    const pasado = performance.now() - (encendido ??= performance.now());
+    if (pasado > 2800) return;
+    const animar = (el, cuadros, duracion, espera) => el && el.animate(cuadros, { duration: duracion, delay: espera - pasado, easing: "cubic-bezier(.2,.7,.2,1)", fill: "backwards" });
+    const trazar = (el, duracion, espera) => { const largo = el.getTotalLength(); animar(el, [{ strokeDasharray: largo, strokeDashoffset: largo }, { strokeDasharray: largo, strokeDashoffset: 0 }], duracion, espera); };
+    const aparecer = (el, duracion, espera, extra = {}) => animar(el, [{ opacity: 0, ...extra, offset: 0 }], duracion, espera);
+    document.querySelectorAll("#escena .haz, #escena .haz-brillo").forEach((el) => trazar(el, 380, 120));
+    aparecer(id("cristal"), 450, 380);
+    document.querySelectorAll("#escena .rayo").forEach((el) => {
+      const espera = 760 + Number(el.dataset.i) * 95;
+      if (el.classList.contains("quieto") || el.classList.contains("caido")) aparecer(el, 500, espera + 300); else trazar(el, 720, espera);
+    });
+    document.querySelectorAll("#escena .rayo-brillo").forEach((el) => aparecer(el, 700, 1500));
+    document.querySelectorAll("#escena .destino").forEach((el, i) => aparecer(el, 300, 1350 + i * 95));
+    filas.forEach((fila, i) => aparecer(fila, 480, 1150 + i * 95, { transform: "translateX(12px)" }));
+  }
+
+  /** Cada tanto, un punto de luz viaja por el rayo de un servicio que funciona. */
+  function pulso() {
+    const capa = id("viajeros"), vivos = [...document.querySelectorAll("#escena .rayo:not(.quieto):not(.caido)")];
+    const rayo = vivos[Math.floor(Math.random() * vivos.length)];
+    if (!capa || !rayo || sinMovimiento() || document.hidden) return;
+    const ns = "http://www.w3.org/2000/svg", punto = document.createElementNS(ns, "circle"), mov = document.createElementNS(ns, "animateMotion");
+    punto.setAttribute("r", "2.8"); punto.setAttribute("class", "viajero"); punto.style.setProperty("--c", rayo.dataset.color);
+    mov.setAttribute("dur", "1.7s"); mov.setAttribute("begin", "indefinite"); mov.setAttribute("fill", "freeze"); mov.setAttribute("path", rayo.getAttribute("d"));
+    punto.append(mov); capa.append(punto);
+    try { mov.beginElement(); } catch { punto.remove(); return; }
+    setTimeout(() => punto.remove(), 1750);
+  }
+
+  if ("ResizeObserver" in window) new ResizeObserver(() => dibujar()).observe(id("hero"));
+  id("hero").addEventListener("pointermove", (e) => {
+    if (!escena) return;
+    const r = e.currentTarget.getBoundingClientRect(), limite = (x) => Math.max(-1, Math.min(1, x));
+    mira = [limite((e.clientX - r.left - escena.centro[0]) / (r.width * 0.5)), limite((e.clientY - r.top - escena.centro[1]) / (r.height * 0.6))];
+    cuadro ||= requestAnimationFrame(() => { cuadro = 0; inclinar(); });
+  }, { passive: true });
+  setInterval(pulso, 2300);
+
+  const fecha = (iso) => iso ? new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }) : "";
+  const hace = (iso) => {
     const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
     if (s < 60) return `hace ${s} s`;
     const min = Math.round(s / 60);
@@ -196,70 +311,33 @@
   };
   let ultimo = null;
 
-  function tarjeta(s) {
-    const est = s.estado || "sin_datos";
-    const li = document.createElement("li");
-    li.className = `servicio ${est}`;
-    li.innerHTML = `<div class="fila"><span class="nombre"></span><span class="estado"><i></i><span></span></span></div>
-                    <p class="desc"></p>`;
-    li.querySelector(".nombre").textContent = s.nombre;
-    li.querySelector(".estado span").textContent = ETIQUETA[est] || est;
-    li.querySelector(".desc").textContent = s.descripcion || "";
-    if (typeof s.porcentaje_7d === "number") {
-      const m = document.createElement("div");
-      m.className = "medidor";
-      const pct = Math.max(0, Math.min(100, s.porcentaje_7d));
-      m.innerHTML = `<span></span><div class="barra"><span></span></div>`;
-      m.firstChild.textContent = `Disponibilidad 7 días · ${pct.toLocaleString("es-CL", { maximumFractionDigits: 1 })} %`;
-      m.querySelector(".barra span").style.width = `${pct}%`;
-      li.append(m);
-    } else if (s.desde && est === "operativo") {
-      const m = document.createElement("div");
-      m.className = "medidor";
-      m.textContent = `En línea desde ${fecha(s.desde)}`;
-      li.append(m);
-    }
-    return li;
-  }
-
   function pintar(d) {
     ultimo = d;
-    $("lista").replaceChildren(...d.servicios.map(tarjeta));
-    const hero = $("hero"), caidos = d.servicios.filter(s => s.estado === "caido").length;
-    const enLinea = d.servicios.filter(s => s.estado === "operativo" || s.estado === "pausado").length;
+    const caidos = d.servicios.filter((s) => s.estado === "caido").length;
+    const enLinea = d.servicios.filter((s) => s.estado === "operativo" || s.estado === "pausado").length;
+    let clase = "ok", titular = "Todos los sistemas operativos", detalle = "Todo funciona con normalidad.";
     if (d.servidor && d.servidor.estado === "caido") {
-      hero.className = "hero mal";
-      $("titular").textContent = "Servidor fuera de servicio";
-      $("detalle").textContent = `Desde ${fecha(d.servidor.caido_desde)}. Ya se está trabajando para recuperarlo.`;
+      clase = "mal"; titular = "Servidor fuera de servicio"; detalle = `Desde ${fecha(d.servidor.caido_desde)}. Ya se está trabajando para recuperarlo.`;
     } else if (d.servidor && d.servidor.estado === "sin_conexion") {
-      hero.className = "hero mal";
-      $("titular").textContent = "Sin conexión con Prisma";
-      $("detalle").textContent = "Prisma no responde en este momento. Se muestra la última revisión guardada.";
+      clase = "mal"; titular = "Sin conexión con Prisma"; detalle = "Prisma no responde en este momento. Se muestra la última revisión guardada.";
     } else if (caidos) {
-      hero.className = "hero medio";
-      $("titular").textContent = caidos === 1 ? "Un servicio tiene problemas" : `${caidos} servicios tienen problemas`;
-      $("detalle").textContent = "Prisma funciona; algunos servicios no responden.";
-    } else {
-      hero.className = "hero ok";
-      $("titular").textContent = "Todos los sistemas operativos";
-      $("detalle").textContent = "Todo funciona con normalidad.";
+      clase = "medio"; titular = caidos === 1 ? "Un servicio tiene problemas" : `${caidos} servicios tienen problemas`; detalle = "Prisma funciona; algunos servicios no responden.";
     }
-    $("chip-servidor").textContent = (d.servidor && d.servidor.nombre) || "—";
-    $("chip-servicios").textContent = `${enLinea}/${d.servicios.length} en línea`;
-    const senal = $("senal");
+    mostrar({ clase, titular, detalle, servicios: d.servicios, chips: [["Servidor", (d.servidor && d.servidor.nombre) || "—"],
+      ["Servicios", `${enLinea}/${d.servicios.length} en línea`], ["Última señal", d.actualizado ? hace(d.actualizado) : "—", "chip-senal"]] });
+    const senal = id("senal");
     senal.className = d.vivo ? "vivo on" : "vivo";
     senal.lastChild.textContent = d.vivo ? "En vivo" : "Sin señal";
-    $("pie").textContent = d.vivo ? "Datos directos de Prisma · se actualiza cada minuto"
-                                  : "Prisma no responde · última revisión guardada por GitHub";
-    reloj();
+    id("pie").textContent = d.vivo ? "Datos directos de Prisma · se actualiza cada minuto" : "Prisma no responde · última revisión guardada por GitHub";
   }
 
   function reloj() {
-    if (ultimo && ultimo.actualizado) $("chip-senal").textContent = hace(ultimo.actualizado);
+    const chip = id("chip-senal");
+    if (chip && ultimo && ultimo.actualizado) chip.textContent = hace(ultimo.actualizado);
   }
 
   function reiniciarCuenta() {
-    const barra = $("recarga");
+    const barra = id("recarga");
     barra.style.animation = "none";
     void barra.offsetWidth;
     barra.style.animation = "";
@@ -270,12 +348,12 @@
   const VIVO = [["Oracle", "https://prisma.tail53ad1c.ts.net/estado.json"],
                 ["Azure", "https://prisma-azure.tail87f042.ts.net/estado.json"]];
   const pedir = (url, ms) => fetch(url, { cache: "no-store", signal: AbortSignal.timeout(ms) })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)));
+    .then((r) => r.ok ? r.json() : Promise.reject(new Error(r.status)));
 
   async function actualizar() {
     reiniciarCuenta();
     try {
-      const d = await Promise.any(VIVO.map(([nombre, url]) => pedir(url, 8000).then(x => {
+      const d = await Promise.any(VIVO.map(([nombre, url]) => pedir(url, 8000).then((x) => {
         if (!x.servicios || !x.servicios.length) throw new Error("vacío");
         return { ...x, vivo: true, servidor: { estado: "operativo", nombre } };
       })));
@@ -286,19 +364,20 @@
         if (!d.servidor || d.servidor.estado !== "caido") {
           // GitHub alcanzó a verla en línea, pero ahora no responde: se avisa sin inventar desde cuándo.
           d.servidor = { estado: "sin_conexion" };
-          d.servicios = d.servicios.map(s => s.nombre === "Prisma" ? { ...s, estado: "caido" } : s);
+          d.servicios = d.servicios.map((s) => s.nombre === "Prisma" ? { ...s, estado: "caido" } : s);
         }
         pintar(d);
       } catch {
-        $("hero").className = "hero medio";
-        $("titular").textContent = "No pude cargar el estado";
-        $("detalle").textContent = "Intenta de nuevo en unos minutos.";
+        id("hero").className = "hero medio";
+        id("titular").textContent = "No pude cargar el estado";
+        id("detalle").textContent = "Intenta de nuevo en unos minutos.";
       }
     }
   }
   actualizar();
   setInterval(actualizar, 60000);
   setInterval(reloj, 1000);
+})();
 </script>
 </body>
 </html>
